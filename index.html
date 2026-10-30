@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>오늘의 팀 뽑기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* layout: settings rail on the left, a big stage on the right; the three team colors carry the page */
+  --bg:#11131b;
+  --panel:#191c27;
+  --panel-2:#222638;
+  --line:#2f3448;
+  --ink:#eef0f7;
+  --muted:#8b91a9;
+  --red:#ff5d62;
+  --blue:#43a6ff;
+  --yellow:#ffc83d;
+  --focus:#b8c1ff;
+  --display:"Black Han Sans","Noto Sans KR",system-ui,sans-serif;
+  --body:"Noto Sans KR",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+h1,h2,h3{margin:0;text-wrap:balance}
+.t0{--tc:var(--red)} .t1{--tc:var(--blue)} .t2{--tc:var(--yellow)}
+
+.top{max-width:1180px;margin:0 auto;padding:28px 20px 8px;display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.top h1{font-family:var(--display);font-weight:400;font-size:44px;line-height:1;letter-spacing:.5px}
+.top h1 .dot{display:inline-flex;gap:6px;margin-left:10px;vertical-align:middle}
+.top h1 .dot i{width:12px;height:12px;border-radius:50%;background:var(--tc);display:block}
+.top p{margin:6px 0 0;color:var(--muted)}
+.wrap{max-width:1180px;margin:0 auto;padding:16px 20px 48px;display:grid;grid-template-columns:330px 1fr;gap:20px;align-items:start}
+@media (max-width:860px){.wrap{grid-template-columns:1fr}}
+
+.rail{display:flex;flex-direction:column;gap:14px}
+.block{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px}
+.block h2{font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.06em;margin-bottom:10px}
+.hint{margin:8px 0 0;font-size:13px;color:var(--muted)}
+.hint.err{color:var(--red)}
+
+.members{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.member{display:flex;align-items:center;gap:6px;background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:4px 6px 4px 10px}
+.member .num{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;width:12px}
+.member input{flex:1;min-width:0;width:100%;background:transparent;border:0;padding:6px 0;font-weight:500}
+.member input:focus{outline:none}
+.member:focus-within{border-color:var(--focus)}
+.crown-btn{display:none;border:0;background:transparent;padding:4px;border-radius:6px;color:var(--muted);line-height:0}
+.manual .crown-btn{display:block}
+.crown-btn[aria-pressed="true"]{color:var(--yellow);background:rgba(255,200,61,.12)}
+.member.is-cap{border-color:rgba(255,200,61,.55)}
+
+.seg{display:flex;background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px}
+.seg button{flex:1;border:0;background:transparent;border-radius:8px;padding:8px 6px;font-weight:700;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mode{text-align:left;background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:4px}
+.mode b{font-size:15px}
+.mode span{font-size:12px;color:var(--muted);line-height:1.4}
+.mode[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.mode .tag{font-size:11px;color:var(--yellow)}
+
+.stage{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:18px;min-width:0}
+.stage-head{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.stage-head h2{font-family:var(--display);font-weight:400;font-size:28px;line-height:1.1}
+.stage-head p{margin:4px 0 0;color:var(--muted)}
+.go{border:0;background:var(--ink);color:var(--bg);font-weight:900;font-size:18px;padding:14px 28px;border-radius:999px;box-shadow:0 4px 0 #9aa0b8;transition:transform .08s, box-shadow .08s}
+.go:active{transform:translateY(3px);box-shadow:0 1px 0 #9aa0b8}
+.go:disabled{opacity:.4;cursor:not-allowed}
+.ghost{border:1px solid var(--line);background:transparent;border-radius:999px;padding:9px 16px;font-weight:700}
+.ghost:hover{border-color:var(--muted)}
+.small{padding:5px 12px;font-size:13px}
+.solid{border:0;background:var(--ink);color:var(--bg);border-radius:999px;padding:10px 18px;font-weight:900}
+.solid:disabled{opacity:.5;cursor:default}
+
+.reveal:empty,.reveal[hidden]{display:none}
+.reveal{min-height:220px}
+.teams{display:grid;gap:12px;grid-template-columns:repeat(var(--k),1fr)}
+@media (max-width:560px){.teams{grid-template-columns:1fr}}
+.team{background:var(--panel-2);border:1px solid var(--line);border-top:5px solid var(--tc);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.team-head{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.team-head b{font-family:var(--display);font-weight:400;font-size:22px;color:var(--tc)}
+.team-head span{font-size:13px;color:var(--muted)}
+.slot{display:flex;align-items:center;gap:8px;min-height:46px;padding:10px 12px;border-radius:10px;background:var(--bg);border:1px dashed var(--line);font-weight:700;font-size:17px;overflow-wrap:anywhere}
+.slot.spin{color:var(--muted)}
+.slot.landed{border-style:solid;border-color:var(--tc);animation:pop .35s ease-out}
+.slot.idle{color:var(--muted);font-weight:500}
+.slot .cap{color:var(--yellow);line-height:0;flex:none}
+@keyframes pop{0%{transform:scale(.92)}60%{transform:scale(1.04)}100%{transform:scale(1)}}
+
+/* ladder */
+.ladder-wrap{display:flex;flex-direction:column;gap:8px}
+.ladder-row{display:grid;grid-template-columns:repeat(6,1fr);gap:4px}
+.ladder-row button,.ladder-row div{min-width:0;text-align:center;border-radius:10px;padding:8px 2px;font-weight:700;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ladder-row button{background:var(--panel-2);border:1px solid var(--line)}
+.ladder-row button:disabled{opacity:.55;cursor:default}
+.ladder-row div{background:var(--bg);border:1px dashed var(--line);color:var(--muted)}
+.ladder-row div.on{border:1px solid var(--tc);color:var(--tc);background:color-mix(in srgb,var(--tc) 14%,transparent);animation:pop .35s ease-out}
+.ladder-canvas{width:100%;height:300px;display:block}
+.ladder-actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+
+/* cards */
+.prompt{font-size:18px;text-align:center;margin:0 0 14px}
+.prompt b{font-family:var(--display);font-weight:400;font-size:24px}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:540px;margin:0 auto}
+.card{position:relative;aspect-ratio:3/4;border:0;background:transparent;padding:0;perspective:800px}
+.card .in{position:absolute;inset:0;transition:transform .5s;transform-style:preserve-3d}
+.card.flipped .in{transform:rotateY(180deg)}
+.card .face{position:absolute;inset:0;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;backface-visibility:hidden;-webkit-backface-visibility:hidden;padding:8px}
+.card .back{background:repeating-linear-gradient(45deg,var(--panel-2) 0 10px,#272c40 10px 20px);border:1px solid var(--line);font-family:var(--display);font-size:40px;color:var(--muted)}
+.card:not(.flipped):hover .back{border-color:var(--ink);color:var(--ink)}
+.card .front{transform:rotateY(180deg);background:var(--tc);color:#14161f}
+.card .front b{font-family:var(--display);font-weight:400;font-size:26px;line-height:1}
+.card .front span{font-weight:700;font-size:15px;text-align:center;overflow-wrap:anywhere}
+.card:disabled{cursor:default}
+
+/* draft */
+.turn{display:flex;align-items:center;justify-content:center;gap:8px;font-size:17px;margin-bottom:14px;flex-wrap:wrap;text-align:center}
+.turn b{color:var(--tc);font-family:var(--display);font-weight:400;font-size:22px}
+.pool{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:14px}
+.chip{border:1px solid var(--line);background:var(--panel-2);border-radius:12px;padding:10px 16px;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:110px}
+.chip b{font-size:16px}
+.chip small{font-size:11px;color:var(--muted)}
+.chip:hover{border-color:var(--tc)}
+.draft-actions{display:flex;justify-content:center;margin-top:12px}
+
+/* result */
+.result:empty{display:none}
+.result{border-top:1px solid var(--line);padding-top:18px;display:flex;flex-direction:column;gap:14px}
+.fresh{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.pill{border-radius:999px;padding:4px 12px;font-size:13px;font-weight:700;background:var(--panel-2);border:1px solid var(--line)}
+.pill.good{color:#5fe0a8;border-color:rgba(95,224,168,.4)}
+.pill.warn{color:var(--yellow);border-color:rgba(255,200,61,.4)}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.copybox{width:100%;min-height:110px;background:var(--bg);border:1px solid var(--line);border-radius:10px;color:var(--ink);padding:10px;font:inherit;font-size:13px}
+
+/* history */
+.history{border-top:1px solid var(--line);padding-top:16px}
+.hist-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.hist-head h3{font-size:15px}
+#histList{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+#histList li{display:flex;align-items:center;gap:10px;background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:8px 10px;flex-wrap:wrap}
+#histList .when{font-size:12px;color:var(--muted);width:78px;font-variant-numeric:tabular-nums}
+#histList .hteams{display:flex;gap:6px;flex-wrap:wrap;flex:1;min-width:0}
+#histList .hteam{font-size:13px;border-left:3px solid var(--tc);padding:2px 8px;background:var(--bg);border-radius:4px}
+#histList .del{border:0;background:transparent;color:var(--muted);font-size:18px;line-height:1;padding:2px 6px;border-radius:6px}
+#histList .del:hover{color:var(--red)}
+#histList .empty{color:var(--muted);justify-content:center;font-size:14px;border-style:dashed}
+
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important}
+}
+
+/* live / identity */
+.status{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:6px 14px;font-size:13px;font-weight:700;background:var(--panel);border:1px solid var(--line);color:var(--muted)}
+.status i{width:8px;height:8px;border-radius:50%;background:var(--muted);display:block}
+.status.live{color:#5fe0a8;border-color:rgba(95,224,168,.4)}
+.status.live i{background:#5fe0a8;box-shadow:0 0 0 4px rgba(95,224,168,.18)}
+.who{display:flex;flex-wrap:wrap;gap:6px}
+.who button{border:1px solid var(--line);background:var(--panel-2);border-radius:999px;padding:7px 12px;font-weight:700;font-size:14px}
+.who button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.banner{border:1px solid rgba(255,200,61,.45);background:rgba(255,200,61,.08);color:var(--yellow);border-radius:12px;padding:10px 14px;font-size:14px}
+.banner:empty{display:none}
+.by{font-size:13px;color:var(--muted)}
+.actor{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;margin:0 0 14px;font-size:13px;color:var(--muted)}
+.actor button{border:1px solid var(--line);background:var(--panel-2);border-radius:999px;padding:5px 12px;font-weight:700;font-size:13px;color:var(--ink)}
+.actor button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.prompt.nudge{animation:pop .35s ease-out;color:var(--yellow)}
+.me-tag{font-size:11px;font-weight:700;color:#5fe0a8;margin-left:4px}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--bg);font-weight:700;padding:10px 18px;border-radius:999px;font-size:14px;z-index:10}
+.toast:empty{display:none}
+</style>
+</head>
+<body>
+<header class="top">
+  <div>
+    <h1>오늘의 팀<span class="dot"><i class="t0"></i><i class="t1"></i><i class="t2"></i></span></h1>
+    <p id="today"></p>
+  </div>
+  <span class="status" id="status"><i></i><span>연결 중…</span></span>
+</header>
+
+<main class="wrap">
+  <aside class="rail">
+    <section class="block" id="roomBlock">
+      <h2>같이 쓰기</h2>
+      <div id="roomBody"></div>
+    </section>
+    <section class="block">
+      <h2>나는 누구?</h2>
+      <div class="who" id="who"></div>
+      <p class="hint">이 폰 주인을 골라두면 카드 뽑을 때 바로 내 차례가 돼요.</p>
+    </section>
+    <section class="block" id="memberBlock">
+      <h2>멤버 6명</h2>
+      <div id="members" class="members"></div>
+      <p class="hint" id="memberHint"></p>
+    </section>
+    <section class="block">
+      <h2>팀 구성</h2>
+      <div class="seg" id="formatSeg">
+        <button type="button" data-v="33">3 : 3</button>
+        <button type="button" data-v="222">2 : 2 : 2</button>
+      </div>
+    </section>
+    <section class="block">
+      <h2>팀장</h2>
+      <div class="seg" id="capSeg">
+        <button type="button" data-v="off">없음</button>
+        <button type="button" data-v="random">랜덤</button>
+        <button type="button" data-v="manual">직접 지정</button>
+      </div>
+      <p class="hint" id="capHint"></p>
+    </section>
+    <section class="block">
+      <h2>뽑는 방식</h2>
+      <div class="modes" id="modes"></div>
+    </section>
+  </aside>
+
+  <section class="stage">
+    <div class="banner" id="banner"></div>
+    <div class="stage-head">
+      <div>
+        <h2 id="modeTitle"></h2>
+        <p id="modeDesc"></p>
+      </div>
+      <button type="button" id="goBtn" class="go">팀 뽑기</button>
+    </div>
+    <div id="reveal" class="reveal" aria-live="polite"></div>
+    <div id="result" class="result"></div>
+    <section class="history">
+      <div class="hist-head">
+        <h3>최근 기록</h3>
+        <button type="button" id="clearHist" class="ghost small">전체 삭제</button>
+      </div>
+      <p class="hint">확정한 팀만 저장돼요. 최근 8번을 보고 같은 짝, 같은 팀장이 덜 나오게 뽑아요.</p>
+      <ol id="histList"></ol>
+    </section>
+  </section>
+</main>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(function(){
+  const CROWN = '<svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 7l4.5 4L12 4l4.5 7L21 7l-2 12H5L3 7z"/></svg>';
+  const TEAM_LABEL = ['레드','블루','옐로'];
+  const TEAM_EMOJI = ['🔴','🔵','🟡'];
+  const ADJ = ['졸린','매운','배고픈','전설의','수상한','반짝이는','겁없는','느긋한','불타는','새벽의','무적의','소심한','우아한','시끄러운','행복한','뒤늦은','은밀한','촉촉한','바삭한','억울한'];
+  const NOUN = ['너구리','떡볶이','고양이','감자','펭귄','수달','호랑이','만두','오리','판다','햄스터','붕어빵','다람쥐','라면','고래','미어캣','치즈','두부','부엉이','삼겹살'];
+  const MODES = {
+    slot:  {title:'셔플', desc:'이름이 빙글빙글 돌다가 팀에 꽂혀요. 다들 화면에서 같이 봐요.', card:'빙글빙글 돌다가 멈춰요'},
+    ladder:{title:'사다리타기', desc:'각자 자기 이름을 눌러서 내려가요.', card:'각자 내 이름 눌러서'},
+    cards: {title:'카드 뽑기', desc:'각자 폰에서 동시에 카드 한 장씩 골라요. 먼저 잡은 사람이 임자.', card:'각자 폰에서 동시에'},
+    draft: {title:'팀장 드래프트', desc:'팀장이 자기 폰에서 번갈아 팀원을 데려가요.', card:'팀장이 직접 데려가요', needsCap:true}
+  };
+  const DEFAULT_NAMES = ['플레이어1','플레이어2','플레이어3','플레이어4','플레이어5','플레이어6'];
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const store = {
+    get(k,d){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; }catch(e){ return d; } },
+    set(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+  };
+  function normSettings(o){
+    o = o || {};
+    const names = Array.isArray(o.names) && o.names.length === 6 ? o.names.map(n=>String(n||'')) : DEFAULT_NAMES.slice();
+    const format = o.format === '222' ? '222' : '33';
+    const captain = ['off','random','manual'].includes(o.captain) ? o.captain : 'off';
+    let mode = MODES[o.mode] ? o.mode : 'slot';
+    if(mode === 'draft' && captain === 'off') mode = 'slot';
+    const caps = Array.isArray(o.manualCaps) ? [...new Set(o.manualCaps.filter(i=>Number.isInteger(i) && i>=0 && i<6))] : [];
+    return {names, format, captain, manualCaps: caps.slice(-(format === '33' ? 2 : 3)), mode};
+  }
+  const legacy = {names: store.get('tp_names'), format: store.get('tp_format'), captain: store.get('tp_captain'), manualCaps: store.get('tp_mcaps'), mode: store.get('tp_mode')};
+  const localSettingsSaved = !!(store.get('tp_settings') || store.get('tp_names'));
+  const S = {
+    settings: normSettings(store.get('tp_settings', legacy)),
+    round: null, picks: {},
+    history: store.get('tp_history', []),
+    me: store.get('tp_me', null),
+    live: false, readOnly: false, connecting: true
+  };
+  if(!Array.isArray(S.history)) S.history = [];
+
+  const $ = s => document.querySelector(s);
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const rand = n => Math.floor(Math.random()*n);
+  const shuffle = a => { a = a.slice(); for(let i=a.length-1;i>0;i--){ const j=rand(i+1); [a[i],a[j]]=[a[j],a[i]]; } return a; };
+  const KT = (f = S.settings.format) => f === '33' ? 2 : 3;
+  const SZ = (f = S.settings.format) => f === '33' ? 3 : 2;
+  const nm = i => (S.settings.names[i] || '').trim() || `${i+1}번`;
+  const dateLabel = d => d.toLocaleDateString('ko-KR',{month:'numeric',day:'numeric',weekday:'short'});
+  const fresh = ts => typeof ts === 'number' && Math.abs(Date.now() - ts) < 10000;
+  const newId = () => 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+  let toastT = null;
+  function toast(msg){ const t = $('#toast'); t.textContent = msg; clearTimeout(toastT); toastT = setTimeout(()=>{ t.textContent=''; }, 2600); }
+
+  $('#today').textContent = new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric',weekday:'long'});
+
+  /* ---------- room (Firebase config + secret room code) ---------- */
+  const FB_VER = '10.12.2';
+  const loadRoom = () => { const r = store.get('tp_room', null); return r && r.cfg && r.room ? r : null; };
+  const b64e = o => btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  const b64d = t => JSON.parse(decodeURIComponent(escape(atob(t.replace(/-/g,'+').replace(/_/g,'/')))));
+  (function readInvite(){
+    const h = location.hash;
+    if(!h.startsWith('#j=')) return;
+    try{ const o = b64d(h.slice(3)); if(o && o.c && o.r) store.set('tp_room', {cfg: o.c, room: o.r}); }catch(e){}
+    try{ history.replaceState(null, '', location.pathname + location.search); }catch(e){}
+  })();
+  function parseConfig(txt){
+    const o = {};
+    ['apiKey','authDomain','projectId','storageBucket','messagingSenderId','appId'].forEach(k=>{
+      const m = txt.match(new RegExp('["\']?' + k + '["\']?\\s*:\\s*["\']([^"\']+)["\']'));
+      if(m) o[k] = m[1];
+    });
+    return o.apiKey && o.projectId && o.appId ? o : null;
+  }
+  function roomCode(){
+    const a = new Uint8Array(12); crypto.getRandomValues(a);
+    return Array.from(a, x=>'abcdefghjkmnpqrstuvwxyz23456789'[x % 31]).join('');
+  }
+  const inviteLink = () => { const r = loadRoom(); return location.origin + location.pathname + '#j=' + b64e({c: r.cfg, r: r.room}); };
+  function renderRoom(){
+    const body = $('#roomBody');
+    if(!loadRoom()){
+      body.innerHTML = `<p class="hint" style="margin:0 0 8px">지금은 이 기기에서만 돌아가요. Firebase 콘솔에서 복사한 <b>firebaseConfig</b>를 통째로 붙여넣으면 방이 만들어져요. (처음 한 번, 만드는 사람만)</p>
+        <textarea id="cfgIn" class="copybox" placeholder="const firebaseConfig = { apiKey: ... }"></textarea>
+        <div class="actions" style="margin-top:8px"><button type="button" class="solid" id="cfgBtn">방 만들기</button></div>
+        <p class="hint" id="cfgMsg"></p>`;
+      $('#cfgBtn').onclick = ()=>{
+        const cfg = parseConfig($('#cfgIn').value);
+        if(!cfg){ $('#cfgMsg').textContent = 'apiKey, projectId, appId가 안 보여요. firebaseConfig 블록을 통째로 붙여넣어 주세요.'; $('#cfgMsg').classList.add('err'); return; }
+        store.set('tp_room', {cfg, room: roomCode()});
+        location.reload();
+      };
+    } else {
+      body.innerHTML = `<p class="hint" style="margin:0 0 8px">방에 연결돼 있어요. 아래 링크를 단톡에 한 번 보내면 친구들은 누르기만 하면 돼요.</p>
+        <div class="actions"><button type="button" class="solid" id="invBtn">친구 초대 링크 복사</button><button type="button" class="ghost small" id="leaveBtn">연결 끊기</button></div>
+        <div id="invOut"></div>`;
+      $('#invBtn').onclick = e=>{
+        const text = inviteLink(), btn = e.target;
+        const fallback = ()=>{ $('#invOut').innerHTML = `<textarea class="copybox" readonly style="margin-top:8px">${esc(text)}</textarea>`; const ta = $('#invOut textarea'); ta.focus(); ta.select(); btn.textContent = '아래 링크를 복사하세요'; };
+        try{ navigator.clipboard.writeText(text).then(()=>{ btn.textContent = '복사했어요'; }, fallback); }catch(err){ fallback(); }
+      };
+      let armed = false;
+      $('#leaveBtn').onclick = e=>{
+        if(!armed){ armed = true; e.target.textContent = '한 번 더 누르면 끊어요'; return; }
+        store.set('tp_room', null); location.reload();
+      };
+    }
+  }
+
+  /* ---------- shared backend: Firebase room when connected, this device otherwise ---------- */
+  let db = null, refs = {}, unsubPicks = null, picksRid = null;
+  // round docs avoid nested arrays: groups/rungs are stored as lists of objects
+  const encRound = r => Object.assign({}, r, {groups: r.groups.map(g=>({m:g})), rungs: (r.rungs||[]).map(c=>({c}))});
+  const decRound = d => {
+    if(!d || !d.id || !Array.isArray(d.groups)) return null;
+    return Object.assign({}, d, {groups: d.groups.map(g=>g.m || []), rungs: (d.rungs||[]).map(x=>x.c || []), caps: d.caps || []});
+  };
+  function onWriteErr(e){
+    if(e && e.code === 'invalid_argument'){ S.readOnly = true; render(); return; }
+    if(e && e.code === 'quota_exceeded'){ toast('저장 공간이 꽉 찼어요. 기록을 좀 지워주세요.'); return; }
+    toast('저장이 안 됐어요. 다시 눌러주세요.');
+  }
+  const B = {
+    async settings(st){
+      S.settings = st; store.set('tp_settings', st); render();
+      if(db) try{ await refs.settings.set(st); }catch(e){ onWriteErr(e); }
+    },
+    async round(r){
+      S.round = r; S.picks = {};
+      if(db){ subPicks(); render(); try{ await refs.round.set(encRound(r)); }catch(e){ onWriteErr(e); } }
+      else render();
+    },
+    async pick(key, data){
+      if(!S.round) return;
+      S.picks = Object.assign({}, S.picks, {[key]: data}); render();
+      if(db) try{ await db.doc(`rounds/${S.round.id}/picks/${key}`).set(data); }catch(e){ onWriteErr(e); }
+    },
+    async history(entries){
+      S.history = entries; render();
+      if(db) try{ await refs.history.set({entries}); }catch(e){ onWriteErr(e); }
+      else store.set('tp_history', entries);
+    }
+  };
+  function subPicks(){
+    const rid = S.round ? S.round.id : null;
+    if(rid === picksRid) return;
+    if(unsubPicks){ unsubPicks(); unsubPicks = null; }
+    picksRid = rid; S.picks = {};
+    if(!rid) return;
+    unsubPicks = db.collection(`rounds/${rid}/picks`).onSnapshot(q=>{
+      if(picksRid !== rid) return;
+      const p = {}; q.docs.forEach(d=>{ p[d.id] = d.data(); });
+      S.picks = p; render();
+    }, onSubErr);
+  }
+  function onSubErr(e){ if(e && e.code === 'invalid_argument'){ S.readOnly = true; render(); } }
+  async function connect(){
+    const rm = loadRoom();
+    if(!rm){ S.connecting = false; render(); return; }
+    let d = null;
+    try{
+      const app = await import(`https://www.gstatic.com/firebasejs/${FB_VER}/firebase-app.js`);
+      const fs = await import(`https://www.gstatic.com/firebasejs/${FB_VER}/firebase-firestore.js`);
+      const fdb = fs.getFirestore(app.initializeApp(rm.cfg));
+      const base = `rooms/${rm.room}/`;
+      const code = e => e && e.code === 'permission-denied' ? 'invalid_argument' : 'unavailable';
+      const mapErr = cb => e => cb && cb({code: code(e), message: e && e.message});
+      d = {
+        doc: path => ({
+          set: data => fs.setDoc(fs.doc(fdb, base + path), data).catch(e=>{ throw {code: code(e)}; }),
+          onSnapshot: (next, err) => fs.onSnapshot(fs.doc(fdb, base + path), sn=>next({id: sn.id, exists: sn.exists(), data: ()=>sn.data()}), mapErr(err))
+        }),
+        collection: path => ({
+          onSnapshot: (next, err) => fs.onSnapshot(fs.collection(fdb, base + path), q=>next({docs: q.docs.map(x=>({id: x.id, exists: true, data: ()=>x.data()}))}), mapErr(err))
+        })
+      };
+    }catch(e){ d = null; S.connErr = true; }
+    S.connecting = false;
+    if(!d){ render(); return; }
+    db = d; S.live = true;
+    refs.settings = db.doc('game/settings');
+    refs.round = db.doc('game/round');
+    refs.history = db.doc('game/history');
+    let firstSettings = true, firstHistory = true;
+    refs.settings.onSnapshot(s=>{
+      if(s.exists){ S.settings = normSettings(s.data()); }
+      else if(firstSettings && localSettingsSaved && !S.readOnly){ refs.settings.set(S.settings).catch(()=>{}); }
+      firstSettings = false; render();
+    }, onSubErr);
+    refs.round.onSnapshot(s=>{
+      const r = s.exists ? decRound(s.data()) : null;
+      S.round = r; subPicks(); render();
+    }, onSubErr);
+    refs.history.onSnapshot(s=>{
+      const local = S.history;
+      if(s.exists){ const e = s.data().entries; S.history = Array.isArray(e) ? e : []; }
+      else if(firstHistory && local.length && !S.readOnly){ refs.history.set({entries: local}).catch(()=>{}); }
+      else S.history = [];
+      firstHistory = false; render();
+    }, onSubErr);
+    render();
+  }
+
+  /* ---------- non-repeating picks ---------- */
+  function combos(arr, r){
+    if(r === 0) return [[]];
+    if(arr.length < r) return [];
+    const [h, ...t] = arr;
+    return combos(t, r-1).map(c=>[h, ...c]).concat(combos(t, r));
+  }
+  function allPartitions(s){
+    const out = [];
+    (function rec(rem, groups){
+      if(!rem.length){ out.push(groups.map(g=>g.slice())); return; }
+      const first = rem[0], rest = rem.slice(1);
+      combos(rest, s-1).forEach(c=>{ groups.push([first, ...c]); rec(rest.filter(x=>!c.includes(x)), groups); groups.pop(); });
+    })([0,1,2,3,4,5], []);
+    return out;
+  }
+  const pairKey = (a,b) => a < b ? a+'\u0001'+b : b+'\u0001'+a;
+  const weight = r => r === 0 ? 4 : r < 3 ? 2 : 1;
+  function scorePartition(groups, hist, format){
+    let score = 0, lastOverlap = 0, anyIdentical = false;
+    hist.forEach((h, r)=>{
+      const together = new Set();
+      (h.teams||[]).forEach(t=>{ const m = t.members||[]; for(let i=0;i<m.length;i++) for(let j=i+1;j<m.length;j++) together.add(pairKey(m[i], m[j])); });
+      let ov = 0;
+      groups.forEach(g=>{ for(let i=0;i<g.length;i++) for(let j=i+1;j<g.length;j++) if(together.has(pairKey(nm(g[i]), nm(g[j])))) ov++; });
+      const identical = h.format === format && groups.every(g=>(h.teams||[]).some(t=>(t.members||[]).length===g.length && g.every(i=>t.members.includes(nm(i)))));
+      if(identical) anyIdentical = true;
+      score += weight(r)*ov + (identical ? 25*weight(r) : 0);
+      if(r === 0) lastOverlap = ov;
+    });
+    return {score, overlap: lastOverlap, identical: anyIdentical};
+  }
+  const recentHist = (excludeRid) => S.history.filter(h=>h.rid !== excludeRid).slice(-8).reverse();
+  function pickCaptains(k){
+    const hist = recentHist();
+    return shuffle(state6().map(i=>{
+      let s = 0; hist.forEach((h, r)=>{ if((h.captains||[]).includes(nm(i))) s += weight(r); });
+      return {i, s, tie: Math.random()};
+    }).sort((a,b)=> a.s - b.s || a.tie - b.tie).slice(0, k).map(x=>x.i));
+  }
+  const state6 = () => [0,1,2,3,4,5];
+  function teamNames(k){ const a = shuffle(ADJ), n = shuffle(NOUN); return Array.from({length:k}, (_, i)=> a[i]+' '+n[i]); }
+  function computeTarget(){
+    const st = S.settings, k = KT(), s = SZ();
+    let caps = [];
+    if(st.captain === 'random') caps = pickCaptains(k);
+    else if(st.captain === 'manual') caps = shuffle(st.manualCaps.slice());
+    let parts = allPartitions(s);
+    if(caps.length) parts = parts.filter(p=>p.every(g=>g.filter(i=>caps.includes(i)).length === 1));
+    const hist = recentHist();
+    const scored = parts.map(p=>({p, sc: scorePartition(p, hist, st.format).score}));
+    const min = Math.min(...scored.map(x=>x.sc));
+    const best = scored.filter(x=>x.sc === min);
+    const chosen = best[rand(best.length)].p;
+    let groups = caps.length ? caps.map(c=>chosen.find(g=>g.includes(c))) : shuffle(chosen);
+    groups = groups.map(g=>{ const c = g.find(i=>caps.includes(i)); return c === undefined ? shuffle(g) : [c, ...shuffle(g.filter(i=>i!==c))]; });
+    return {groups, caps, names: teamNames(k)};
+  }
+  function makeRungs(){
+    const R = 10; let rungs;
+    do {
+      rungs = [];
+      for(let r=0; r<R; r++){ const row = []; for(let c=0; c<5; c++) if(Math.random() < .42 && !row.includes(c-1)) row.push(c); rungs.push(row); }
+    } while(rungs.flat().length < 12 || [0,1,2,3,4].some(c=>!rungs.some(r=>r.includes(c))));
+    return rungs;
+  }
+
+  /* ---------- settings rail ---------- */
+  function validate(){
+    const st = S.settings, names = st.names.map(n=>n.trim());
+    let msg = '', ok = true;
+    if(names.some(n=>!n)){ ok=false; msg='빈 이름이 있어요.'; }
+    else if(new Set(names).size !== 6){ ok=false; msg='이름이 겹쳐요. 서로 다르게 적어주세요.'; }
+    const mh = $('#memberHint');
+    mh.textContent = msg || (S.live ? '이름 바꾸면 다른 사람 화면에도 바로 바뀌어요.' : '이름을 눌러서 바꿀 수 있어요.');
+    mh.classList.toggle('err', !!msg);
+    const ch = $('#capHint'); ch.classList.remove('err');
+    if(st.captain === 'off') ch.textContent = '팀원 전부 랜덤으로 섞어요.';
+    else if(st.captain === 'random') ch.textContent = `팀장 ${KT()}명을 뽑아요. 최근에 팀장 안 한 사람이 먼저 걸려요.`;
+    else {
+      const n = st.manualCaps.length;
+      if(n !== KT()){ ok=false; ch.textContent = `이름 옆 왕관을 눌러 팀장 ${KT()}명을 골라주세요. (지금 ${n}명)`; ch.classList.add('err'); }
+      else ch.textContent = '팀장은 서로 다른 팀으로 가요.';
+    }
+    return ok;
+  }
+  const editSettings = fn => { if(S.readOnly) return; const st = normSettings(JSON.parse(JSON.stringify(S.settings))); fn(st); B.settings(normSettings(st)); };
+
+  (function buildMembers(){
+    $('#members').innerHTML = state6().map(i=>`
+      <div class="member">
+        <span class="num">${i+1}</span>
+        <input id="name${i}" data-i="${i}" maxlength="12" aria-label="${i+1}번 멤버 이름" autocomplete="off">
+        <button type="button" class="crown-btn" data-i="${i}" aria-label="${i+1}번을 팀장으로">${CROWN}</button>
+      </div>`).join('');
+  })();
+  let nameT = null;
+  $('#members').addEventListener('input', e=>{
+    if(e.target.tagName !== 'INPUT' || S.readOnly) return;
+    S.settings.names[+e.target.dataset.i] = e.target.value;
+    renderNonInputs();
+    clearTimeout(nameT);
+    nameT = setTimeout(()=> editSettings(()=>{}), 500);
+  });
+  $('#members').addEventListener('click', e=>{
+    const b = e.target.closest('.crown-btn'); if(!b) return;
+    const i = +b.dataset.i;
+    editSettings(st=>{
+      if(st.manualCaps.includes(i)) st.manualCaps = st.manualCaps.filter(x=>x!==i);
+      else { st.manualCaps.push(i); if(st.manualCaps.length > KT(st.format)) st.manualCaps.shift(); }
+    });
+  });
+  $('#formatSeg').addEventListener('click', e=>{ const b = e.target.closest('button'); if(b) editSettings(st=>{ st.format = b.dataset.v; }); });
+  $('#capSeg').addEventListener('click', e=>{ const b = e.target.closest('button'); if(b) editSettings(st=>{ st.captain = b.dataset.v; }); });
+  $('#modes').innerHTML = Object.entries(MODES).map(([k,m])=>`
+    <button type="button" class="mode" data-m="${k}"><b>${m.title}</b><span>${m.card}</span>${m.needsCap ? '<span class="tag">팀장 필요</span>' : ''}</button>`).join('');
+  $('#modes').addEventListener('click', e=>{
+    const b = e.target.closest('.mode'); if(!b) return;
+    editSettings(st=>{ st.mode = b.dataset.m; if(MODES[st.mode].needsCap && st.captain === 'off') st.captain = 'random'; });
+  });
+  $('#who').addEventListener('click', e=>{
+    const b = e.target.closest('button'); if(!b) return;
+    const i = +b.dataset.i;
+    S.me = S.me === i ? null : i; store.set('tp_me', S.me);
+    if(view.onMe) view.onMe();
+    render();
+  });
+
+  function renderRail(){
+    const st = S.settings;
+    state6().forEach(i=>{
+      const inp = $('#name'+i);
+      if(document.activeElement !== inp && inp.value !== st.names[i]) inp.value = st.names[i];
+      inp.readOnly = S.readOnly;
+    });
+    renderNonInputs();
+  }
+  function renderNonInputs(){
+    const st = S.settings;
+    $('#memberBlock').classList.toggle('manual', st.captain === 'manual');
+    document.querySelectorAll('#members .member').forEach((row, i)=>{
+      const cap = st.manualCaps.includes(i);
+      row.classList.toggle('is-cap', st.captain === 'manual' && cap);
+      row.querySelector('.crown-btn').setAttribute('aria-pressed', cap);
+    });
+    document.querySelectorAll('#formatSeg button').forEach(b=>b.setAttribute('aria-pressed', b.dataset.v === st.format));
+    document.querySelectorAll('#capSeg button').forEach(b=>b.setAttribute('aria-pressed', b.dataset.v === st.captain));
+    document.querySelectorAll('#modes .mode').forEach(b=>b.setAttribute('aria-pressed', b.dataset.m === st.mode));
+    document.querySelectorAll('.rail button').forEach(b=>{ if(!b.closest('#who')) b.disabled = S.readOnly; });
+    $('#who').innerHTML = state6().map(i=>`<button type="button" data-i="${i}" aria-pressed="${S.me===i}">${esc(nm(i))}</button>`).join('');
+    const ok = validate();
+    const go = $('#goBtn');
+    go.disabled = !ok || S.readOnly;
+    go.textContent = S.round ? '새로 뽑기' : '팀 뽑기';
+  }
+
+  /* ---------- stage views ---------- */
+  const reveal = $('#reveal'), result = $('#result');
+  const capIcon = on => on ? `<span class="cap" title="팀장">${CROWN}</span>` : '';
+  const teamHead = (g, name) => `<div class="team-head"><b>${TEAM_LABEL[g]}</b>${name ? `<span>${esc(name)}</span>` : ''}</div>`;
+  const meTag = i => S.me === i ? '<span class="me-tag">나</span>' : '';
+  let view = {id: null};
+
+  function renderIdle(){
+    const k = KT(), s = SZ();
+    let html = `<div class="teams" style="--k:${k}">`;
+    for(let g=0; g<k; g++){
+      html += `<div class="team t${g}">${teamHead(g, '')}`;
+      for(let p=0; p<s; p++) html += `<div class="slot idle">${p===0 && S.settings.captain!=='off' ? capIcon(true)+'팀장 ?' : '?'}</div>`;
+      html += `</div>`;
+    }
+    reveal.innerHTML = html + '</div>';
+  }
+  function syncView(){
+    const r = S.round;
+    if(!r){
+      if(view.destroy) view.destroy();
+      view = {id: null}; renderIdle(); return;
+    }
+    if(view.id !== r.id){
+      if(view.destroy) view.destroy();
+      view = ({slot: SlotView, ladder: LadderView, cards: CardsView, draft: DraftView}[r.mode] || SlotView)(r);
+      view.build();
+    }
+    view.update();
+  }
+  const teamOf = (groups, i) => groups.findIndex(g=>g.includes(i));
+
+  function SlotView(r){
+    const v = {id: r.id, done: false, groups: r.groups, timers: []};
+    v.build = ()=>{
+      const k = r.groups.length;
+      let html = `<div class="teams" style="--k:${k}">`;
+      r.groups.forEach((g, gi)=>{
+        html += `<div class="team t${gi}">${teamHead(gi, r.names[gi])}`;
+        g.forEach(i=>{ html += r.caps.includes(i) ? `<div class="slot landed">${capIcon(true)}${esc(nm(i))}${meTag(i)}</div>` : `<div class="slot spin" data-i="${i}">…</div>`; });
+        html += `</div>`;
+      });
+      reveal.innerHTML = html + '</div>';
+      const slots = shuffle([...reveal.querySelectorAll('.slot.spin')]);
+      const land = el=>{ el.classList.remove('spin'); el.classList.add('landed'); el.innerHTML = esc(nm(+el.dataset.i)) + meTag(+el.dataset.i); };
+      if(!fresh(r.ts)){ slots.forEach(land); v.done = true; return; }
+      const iv = setInterval(()=>{ slots.forEach(el=>{ if(el.classList.contains('spin')) el.textContent = nm(rand(6)); }); }, 70);
+      v.timers.push(iv);
+      const base = reduced ? 150 : 900, gap = reduced ? 120 : 520;
+      slots.forEach((el, n)=>{
+        v.timers.push(setTimeout(()=>{
+          land(el);
+          if(n === slots.length-1){ clearInterval(iv); v.timers.push(setTimeout(()=>{ v.done = true; render(); }, 350)); }
+        }, base + n*gap));
+      });
+    };
+    v.update = ()=>{};
+    v.destroy = ()=>{ v.timers.forEach(t=>{ clearTimeout(t); clearInterval(t); }); };
+    return v;
+  }
+
+  function LadderView(r){
+    const v = {id: r.id, done: false, groups: r.groups, dead: false};
+    const R = r.rungs.length, rungs = r.rungs;
+    const paths = [], end = [];
+    for(let i=0; i<6; i++){
+      let c = i; const steps = [{c, r:-1}];
+      for(let k=0; k<R; k++){
+        if(rungs[k].includes(c)){ steps.push({c, r:k}); c++; steps.push({c, r:k}); }
+        else if(rungs[k].includes(c-1)){ steps.push({c, r:k}); c--; steps.push({c, r:k}); }
+      }
+      steps.push({c, r:R}); paths.push(steps); end[i] = c;
+    }
+    const slotOwner = []; end.forEach((e, i)=> slotOwner[e] = i);
+    const known = new Set(), done = new Set(), queue = []; let active = null;
+    let cv, ctx, W = 0, H = 0, TC, LINE, INK;
+    const X = c => (c+.5)*W/6;
+    const Y = k => k < 0 ? 4 : k >= R ? H-4 : 4 + (k+1)*(H-8)/(R+1);
+    const pts = i => paths[i].map(s=>[X(s.c), Y(s.r)]);
+    const plen = p => p.reduce((s, q, k)=> k ? s + Math.hypot(q[0]-p[k-1][0], q[1]-p[k-1][1]) : 0, 0);
+    function size(){ const dpr = window.devicePixelRatio || 1; W = cv.clientWidth; H = cv.clientHeight; cv.width = W*dpr; cv.height = H*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); }
+    function drawPath(p, upto, color, w){
+      ctx.strokeStyle = color; ctx.lineWidth = w; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      ctx.beginPath(); ctx.moveTo(p[0][0], p[0][1]);
+      let left = upto;
+      for(let k=1; k<p.length; k++){
+        const [x0,y0] = p[k-1], [x1,y1] = p[k], L = Math.hypot(x1-x0, y1-y0);
+        if(left >= L){ ctx.lineTo(x1,y1); left -= L; } else { ctx.lineTo(x0+(x1-x0)*left/L, y0+(y1-y0)*left/L); break; }
+      }
+      ctx.stroke();
+    }
+    function draw(){
+      if(!ctx) return;
+      ctx.clearRect(0,0,W,H);
+      ctx.strokeStyle = LINE; ctx.lineWidth = 3; ctx.lineCap = 'round';
+      for(let c=0; c<6; c++){ ctx.beginPath(); ctx.moveTo(X(c), 4); ctx.lineTo(X(c), H-4); ctx.stroke(); }
+      rungs.forEach((row, k)=> row.forEach(c=>{ ctx.beginPath(); ctx.moveTo(X(c), Y(k)); ctx.lineTo(X(c+1), Y(k)); ctx.stroke(); }));
+      done.forEach(i=> drawPath(pts(i), Infinity, TC[teamOf(r.groups, i)], 4));
+      if(active) drawPath(pts(active.i), active.d, INK, 5);
+    }
+    function landSlot(i){
+      const el = reveal.querySelectorAll('#lBot [data-slot]')[end[i]];
+      if(!el) return;
+      el.textContent = (r.caps.includes(i) ? '👑 ' : '') + TEAM_LABEL[teamOf(r.groups, i)];
+      el.classList.add('on');
+    }
+    function checkDone(){ if(done.size === 6 && !v.done){ v.done = true; return true; } return false; }
+    function go(i){
+      const p = pts(i), L = plen(p), dur = reduced ? 1 : 1300, t0 = performance.now();
+      active = {i, d: 0};
+      (function step(now){
+        if(v.dead) return;
+        active.d = Math.min(1, (now - t0)/dur) * L; draw();
+        if(active.d < L) return requestAnimationFrame(step);
+        active = null; done.add(i); landSlot(i); draw();
+        if(queue.length) go(queue.shift());
+        else if(checkDone()) setTimeout(render, 300);
+      })(t0);
+    }
+    const onResize = ()=>{ if(v.dead) return; size(); draw(); };
+    v.build = ()=>{
+      reveal.innerHTML = `
+        <div class="ladder-wrap">
+          <div class="ladder-row" id="lTop">${state6().map(i=>`<button type="button" data-i="${i}">${r.caps.includes(i)?'👑 ':''}${esc(nm(i))}</button>`).join('')}</div>
+          <canvas class="ladder-canvas" id="lCanvas"></canvas>
+          <div class="ladder-row" id="lBot">${slotOwner.map(i=>`<div class="t${teamOf(r.groups,i)}" data-slot>?</div>`).join('')}</div>
+          <div class="ladder-actions"><button type="button" class="ghost" id="lAll">안 내려간 사람 한 번에 공개</button></div>
+        </div>`;
+      cv = $('#lCanvas'); ctx = cv.getContext('2d');
+      const css = getComputedStyle(document.documentElement), col = n => css.getPropertyValue(n).trim();
+      TC = [col('--red'), col('--blue'), col('--yellow')]; LINE = col('--line'); INK = col('--ink');
+      size(); draw();
+      window.addEventListener('resize', onResize);
+      $('#lTop').addEventListener('click', e=>{
+        const b = e.target.closest('button'); if(!b || S.readOnly) return;
+        const i = +b.dataset.i; if(!S.picks['L'+i]) B.pick('L'+i, {at: Date.now()});
+      });
+      $('#lAll').addEventListener('click', async e=>{
+        if(S.readOnly) return;
+        e.target.disabled = true;
+        for(const i of state6()) if(!S.picks['L'+i]) await B.pick('L'+i, {at: Date.now()});
+      });
+    };
+    v.update = ()=>{
+      state6().forEach(i=>{
+        const p = S.picks['L'+i];
+        const btn = reveal.querySelector(`#lTop [data-i="${i}"]`);
+        if(btn){ btn.disabled = !!p || S.readOnly; btn.innerHTML = (r.caps.includes(i)?'👑 ':'') + esc(nm(i)) + meTag(i); }
+        if(!p || known.has(i)) return;
+        known.add(i);
+        if(fresh(p.at)){ if(active) queue.push(i); else go(i); }
+        else { done.add(i); landSlot(i); }
+      });
+      const all = $('#lAll'); if(all) all.disabled = S.readOnly || state6().every(i=>S.picks['L'+i]);
+      draw(); checkDone();
+    };
+    v.destroy = ()=>{ v.dead = true; window.removeEventListener('resize', onResize); };
+    return v;
+  }
+
+  function CardsView(r){
+    const v = {id: r.id, done: false, groups: r.groups, actor: null, flipped: new Set()};
+    const persons = state6().filter(i=>!r.caps.includes(i));
+    const N = persons.length;
+    function claims(){
+      const list = persons.map(p=>({p, d: S.picks['C'+p]})).filter(x=>x.d && Number.isInteger(x.d.card) && x.d.card>=0 && x.d.card<N)
+        .sort((a,b)=> (a.d.ts||0) - (b.d.ts||0) || a.p - b.p);
+      const byCard = {}, byPerson = {};
+      list.forEach(x=>{ if(byCard[x.d.card] === undefined){ byCard[x.d.card] = x.p; byPerson[x.p] = x.d.card; } });
+      return {byCard, byPerson};
+    }
+    function fixActor(byPerson){
+      const ok = i => i !== null && persons.includes(i) && byPerson[i] === undefined;
+      if(!ok(v.actor)) v.actor = ok(S.me) ? S.me : null;
+    }
+    v.onMe = ()=>{ v.actor = null; };
+    v.build = ()=>{
+      const capLine = r.caps.length ? `<p class="hint" style="text-align:center;margin:-6px 0 12px">팀장: ${r.caps.map((c,g)=>`<span class="t${g}" style="color:var(--tc);font-weight:700">${TEAM_LABEL[g]} ${esc(nm(c))}</span>`).join(' · ')}</p>` : '';
+      reveal.innerHTML = `<p class="prompt" id="cPrompt"></p>${capLine}<div class="actor" id="cActor"></div><div class="cards">${Array.from({length:N}, (_, n)=>`
+        <button type="button" class="card" data-n="${n}" aria-label="카드 ${n+1}"><span class="in"><span class="face back">?</span><span class="face front"></span></span></button>`).join('')}</div>`;
+      reveal.querySelector('.cards').addEventListener('click', e=>{
+        const card = e.target.closest('.card'); if(!card || S.readOnly || v.done) return;
+        const n = +card.dataset.n, c = claims();
+        if(c.byCard[n] !== undefined) return;
+        fixActor(c.byPerson);
+        if(v.actor === null){ const pr = $('#cPrompt'); pr.classList.remove('nudge'); void pr.offsetWidth; pr.classList.add('nudge'); return; }
+        B.pick('C'+v.actor, {card: n, ts: Date.now()});
+      });
+      $('#cActor').addEventListener('click', e=>{
+        const b = e.target.closest('button'); if(!b) return;
+        v.actor = +b.dataset.i; v.update();
+      });
+    };
+    v.update = ()=>{
+      const c = claims();
+      fixActor(c.byPerson);
+      reveal.querySelectorAll('.card').forEach(card=>{
+        const n = +card.dataset.n, p = c.byCard[n];
+        if(p === undefined || v.flipped.has(n)) return;
+        v.flipped.add(n);
+        const g = teamOf(r.groups, p);
+        card.querySelector('.front').innerHTML = `<b>${TEAM_LABEL[g]}</b><span>${esc(nm(p))}</span>`;
+        card.classList.add('t'+g); card.disabled = true;
+        card.setAttribute('aria-label', `${nm(p)}: ${TEAM_LABEL[g]}`);
+        requestAnimationFrame(()=>requestAnimationFrame(()=>card.classList.add('flipped')));
+      });
+      const left = persons.filter(p=>c.byPerson[p] === undefined);
+      const pr = $('#cPrompt'), ac = $('#cActor');
+      if(!left.length){
+        pr.textContent = '다 뽑았어요!'; ac.innerHTML = '';
+        if(!v.done){ v.done = true; setTimeout(render, 700); }
+        return;
+      }
+      if(v.actor !== null) pr.innerHTML = v.actor === S.me ? `<b>${esc(nm(v.actor))}</b>, 카드 한 장 골라!` : `<b>${esc(nm(v.actor))}</b> 대신 고르는 중`;
+      else if(S.me !== null && !persons.includes(S.me)) pr.innerHTML = `<b>${esc(nm(S.me))}</b>은(는) 팀장이라 안 뽑아요`;
+      else if(S.me !== null) pr.innerHTML = `<b>${esc(nm(S.me))}</b>은(는) 이미 뽑았어요`;
+      else pr.textContent = '왼쪽 위 "나는 누구?"에서 내 이름부터 골라요';
+      ac.innerHTML = `아직 안 뽑음: ` + left.map(p=>`<button type="button" data-i="${p}" aria-pressed="${v.actor===p}">${esc(nm(p))}${p===S.me?' (나)':''}</button>`).join('') + (left.some(p=>p!==S.me) ? ' <span>· 안 들어온 사람은 눌러서 대신 뽑아줘요</span>' : '');
+    };
+    return v;
+  }
+
+  function DraftView(r){
+    const k = r.caps.length;
+    const v = {id: r.id, done: false, groups: null};
+    const order = k === 2 ? [0,1,1,0] : [0,1,2];
+    const recentTogether = (a, b)=> S.history.slice(-5).filter(h=>(h.teams||[]).some(tm=>(tm.members||[]).includes(nm(a)) && tm.members.includes(nm(b)))).length;
+    function compute(){
+      const teams = r.caps.map(c=>[c]); const used = new Set(r.caps); let step = 0;
+      while(step < order.length){
+        const d = S.picks['D'+step];
+        if(!d || !Number.isInteger(d.pick) || used.has(d.pick) || d.pick<0 || d.pick>5) break;
+        teams[order[step]].push(d.pick); used.add(d.pick); step++;
+      }
+      return {teams, step, pool: state6().filter(i=>!used.has(i))};
+    }
+    v.build = ()=>{
+      reveal.onclick = e=>{
+        if(S.readOnly || view !== v) return;
+        const {step, pool} = compute(); if(step >= order.length) return;
+        const c = e.target.closest('.chip');
+        if(c) return B.pick('D'+step, {pick: +c.dataset.i});
+        if(e.target.closest('#dRand')) B.pick('D'+step, {pick: pool[rand(pool.length)]});
+      };
+    };
+    v.update = ()=>{
+      const {teams, step, pool} = compute();
+      const cur = order[step], capNow = r.caps[cur];
+      let html = '';
+      if(step < order.length){
+        const mine = S.me === capNow;
+        html += `<div class="turn t${cur}"><b>${TEAM_LABEL[cur]}</b> 팀장 <strong>${esc(nm(capNow))}</strong> ${mine ? '— 네 차례야! 데려갈 사람 골라' : '차례예요'}${k===2 && step===1 ? ' (2명 연속)' : ''}</div>`;
+      }
+      html += `<div class="teams" style="--k:${k}">`;
+      teams.forEach((g, gi)=>{
+        html += `<div class="team t${gi}">${teamHead(gi, r.names[gi])}`;
+        for(let p=0; p<SZ(r.format); p++){ const i = g[p]; html += i === undefined ? `<div class="slot idle">빈 자리</div>` : `<div class="slot landed">${capIcon(p===0)}${esc(nm(i))}${meTag(i)}</div>`; }
+        html += `</div>`;
+      });
+      html += `</div>`;
+      if(step < order.length){
+        html += `<div class="pool t${cur}">${pool.map(i=>{ const n = recentTogether(capNow, i);
+          return `<button type="button" class="chip" data-i="${i}" ${S.readOnly?'disabled':''}><b>${esc(nm(i))}</b><small>${n ? `최근 5번 중 ${n}번 같은 팀` : '최근에 같은 팀 안 함'}</small></button>`; }).join('')}</div>
+          <div class="draft-actions"><button type="button" class="ghost small" id="dRand" ${S.readOnly?'disabled':''}>대신 랜덤으로 뽑기</button></div>`;
+        if(S.me !== capNow) html += `<p class="hint" style="text-align:center">팀장이 자리에 없으면 아무나 대신 눌러도 돼요.</p>`;
+      } else if(!v.done){ v.done = true; v.groups = teams; }
+      if(v.done) v.groups = teams;
+      reveal.innerHTML = html;
+    };
+    v.destroy = ()=>{ reveal.onclick = null; };
+    return v;
+  }
+
+  /* ---------- result ---------- */
+  let resultKey = '';
+  function renderResult(){
+    const r = S.round;
+    reveal.hidden = !!(r && view.done && (r.mode === 'slot' || r.mode === 'draft'));
+    if(!r || !view.done || !view.groups){ if(resultKey){ result.innerHTML = ''; resultKey = ''; } return; }
+    const groups = view.groups;
+    const saved = S.history.some(h=>h.rid === r.id);
+    const key = [r.id, saved, S.settings.names.join('|'), S.readOnly, S.me].join('#');
+    if(key === resultKey) return;
+    resultKey = key;
+    const hist = recentHist(r.id);
+    const sc = scorePartition(groups, hist, r.format);
+    let fresh;
+    if(!hist.length) fresh = `<span class="pill">첫 기록이에요</span>`;
+    else if(sc.identical) fresh = `<span class="pill warn">최근 기록이랑 같은 조합이 있어요</span>`;
+    else if(sc.overlap === 0) fresh = `<span class="pill good">지난번이랑 겹치는 짝 0쌍 · 완전 새 조합</span>`;
+    else fresh = `<span class="pill warn">지난번이랑 같은 팀이었던 짝 ${sc.overlap}쌍</span>`;
+    let html = `<div class="fresh">${fresh}</div><div class="teams" style="--k:${groups.length}">`;
+    groups.forEach((g, gi)=>{ html += `<div class="team t${gi}">${teamHead(gi, r.names[gi])}${g.map(i=>`<div class="slot landed">${capIcon(r.caps.includes(i))}${esc(nm(i))}${meTag(i)}</div>`).join('')}</div>`; });
+    html += `</div><div class="actions">
+      <button type="button" class="solid" id="rSave" ${saved || S.readOnly ? 'disabled' : ''}>${saved ? '확정됨 · 기록에 저장했어요' : '이 팀으로 확정'}</button>
+      <button type="button" class="ghost" id="rCopy">카톡용 복사</button>
+    </div><div id="copyOut"></div>`;
+    result.innerHTML = html;
+    $('#rSave').onclick = ()=>{
+      if(S.history.some(h=>h.rid === r.id) || S.readOnly) return;
+      const entry = {rid: r.id, ts: Date.now(), format: r.format, captains: r.caps.map(nm),
+        teams: groups.map((g, gi)=>({label: TEAM_LABEL[gi], name: r.names[gi], members: g.map(nm)}))};
+      B.history([...S.history, entry].slice(-60));
+    };
+    $('#rCopy').onclick = e=>{
+      const lines = [`[${dateLabel(new Date())} 오늘의 팀]`];
+      groups.forEach((g, gi)=> lines.push(`${TEAM_EMOJI[gi]} ${TEAM_LABEL[gi]} · ${r.names[gi]}: ${g.map(i=> nm(i) + (r.caps.includes(i) ? '(팀장)' : '')).join(', ')}`));
+      const text = lines.join('\n'), btn = e.target;
+      const fallback = ()=>{ $('#copyOut').innerHTML = `<textarea class="copybox" readonly>${esc(text)}</textarea>`; const ta = $('#copyOut textarea'); ta.focus(); ta.select(); btn.textContent = '아래 글을 복사하세요'; };
+      try{ navigator.clipboard.writeText(text).then(()=>{ btn.textContent = '복사했어요'; }, fallback); }catch(err){ fallback(); }
+    };
+  }
+
+  /* ---------- history ---------- */
+  let histKey = '';
+  function renderHistory(){
+    const key = JSON.stringify(S.history.slice(-15)) + S.readOnly;
+    if(key === histKey) return; histKey = key;
+    const list = $('#histList');
+    $('#clearHist').hidden = !S.history.length || S.readOnly;
+    if(!S.history.length){ list.innerHTML = `<li class="empty">아직 확정한 팀이 없어요</li>`; return; }
+    list.innerHTML = S.history.map((h, idx)=>({h, idx})).reverse().slice(0, 15).map(({h, idx})=>`
+      <li>
+        <span class="when">${dateLabel(new Date(h.ts))}</span>
+        <span class="hteams">${(h.teams||[]).map((tm, gi)=>`<span class="hteam t${gi}">${(tm.members||[]).map(m=> (h.captains||[]).includes(m) ? '👑'+esc(m) : esc(m)).join(', ')}</span>`).join('')}</span>
+        ${S.readOnly ? '' : `<button type="button" class="del" data-idx="${idx}" aria-label="이 기록 삭제">×</button>`}
+      </li>`).join('');
+  }
+  $('#histList').addEventListener('click', e=>{
+    const b = e.target.closest('.del'); if(!b || S.readOnly) return;
+    const idx = +b.dataset.idx;
+    B.history(S.history.filter((_, i)=>i !== idx));
+  });
+  let clearArmed = null;
+  $('#clearHist').addEventListener('click', e=>{
+    const b = e.currentTarget;
+    if(!clearArmed){ b.textContent = '한 번 더 누르면 다 지워요'; clearArmed = setTimeout(()=>{ clearArmed = null; b.textContent = '전체 삭제'; }, 3000); return; }
+    clearTimeout(clearArmed); clearArmed = null; b.textContent = '전체 삭제';
+    B.history([]);
+  });
+
+  /* ---------- start + render ---------- */
+  $('#goBtn').addEventListener('click', ()=>{
+    if(!validate() || S.readOnly) return;
+    const t = computeTarget(), st = S.settings;
+    const r = {id: newId(), ts: Date.now(), mode: st.mode, format: st.format, groups: t.groups, caps: t.caps, names: t.names, by: S.me};
+    if(r.mode === 'ladder') r.rungs = makeRungs();
+    B.round(r);
+  });
+
+  function renderHead(){
+    const st = $('#status');
+    st.classList.toggle('live', S.live);
+    st.querySelector('span').textContent = S.connecting ? '연결 중…' : S.live ? '실시간 · 방 연결됨' : '혼자 모드 · 이 기기에서만';
+    $('#banner').textContent = S.readOnly ? '방에 저장이 안 돼요. Firebase 콘솔의 Firestore 규칙이 제대로 들어갔는지 확인해 주세요.'
+      : S.connErr ? 'Firebase에 연결을 못 했어요. 인터넷 연결이나 붙여넣은 설정을 확인해 주세요. 지금은 이 기기에서만 돌아가요.' : '';
+    const r = S.round, m = MODES[r ? r.mode : S.settings.mode];
+    $('#modeTitle').textContent = m.title + (r ? (r.format === '33' ? ' · 3:3' : ' · 2:2:2') : '');
+    $('#modeDesc').innerHTML = esc(m.desc) + (r && Number.isInteger(r.by) ? ` <span class="by">· ${esc(nm(r.by))}님이 시작</span>` : '');
+  }
+  function render(){
+    renderHead();
+    renderRail();
+    syncView();
+    renderResult();
+    renderHistory();
+  }
+
+  renderRoom();
+  render();
+  connect();
+})();
+</script>
+</body>
+</html>
